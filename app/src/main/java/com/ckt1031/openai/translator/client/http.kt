@@ -12,7 +12,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Streaming
 
-public interface APIService {
+interface APIService {
     @POST("v1/chat/completions")
     fun postChatCompletions(
         @Header("Authorization") authorization: String,

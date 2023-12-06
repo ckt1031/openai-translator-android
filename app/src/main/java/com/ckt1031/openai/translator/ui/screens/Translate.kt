@@ -61,8 +61,6 @@ import androidx.annotation.RequiresApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import java.util.Locale
-
 
 fun generatePrompt(
    targetLangName: String,

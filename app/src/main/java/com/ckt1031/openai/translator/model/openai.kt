@@ -2,11 +2,6 @@ package com.ckt1031.openai.translator.model
 
 import com.google.gson.annotations.SerializedName
 
-data class OpenAIMessage(
-    val role: String,
-    val content: String
-)
-
 data class ChatRequestBody(
     val model: String,
     val messages: List<Message>,
@@ -47,12 +42,6 @@ data class StreamChatCompletionResponse(
     val model: String,
     val system_fingerprint: String,
     val choices: List<Choice>
-)
-
-data class StreamChoice(
-    val index: Int,
-    val delta: StreamDelta,
-    val finish_reason: String?
 )
 
 data class StreamDelta(

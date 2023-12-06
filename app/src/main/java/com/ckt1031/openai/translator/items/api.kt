@@ -1,9 +1,9 @@
 package com.ckt1031.openai.translator.items
 
-val apiType = listOf(
-    "OpenAI",
-    "Azure"
-)
+//val apiType = listOf(
+//    "OpenAI",
+//    "Azure"
+//)
 
 val openaiChatModels = listOf(
     "gpt-3.5-turbo",
