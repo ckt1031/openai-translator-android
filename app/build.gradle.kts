@@ -22,7 +22,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -65,6 +65,7 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     // JSON Converter for Retrofit
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.google.android.material:material:1.10.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -164,8 +165,8 @@ fun SettingsScreen(dataStore: DataStore<Preferences>) {
                 )
             }
 
-            var selectedModelIndex by remember { mutableStateOf(0) }
-            var selectedModel = openaiChatModels[selectedModelIndex]
+            var selectedModelIndex by remember { mutableIntStateOf(0) }
+            val selectedModel = openaiChatModels[selectedModelIndex]
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 16.dp)
@@ -176,7 +177,8 @@ fun SettingsScreen(dataStore: DataStore<Preferences>) {
 
                 LaunchedEffect(model) {
                     if (model != null) {
-                        selectedModel = model as String
+                        println(model)
+                        selectedModelIndex = openaiChatModels.indexOf(model as String)
                     }
                 }
 
@@ -296,7 +298,7 @@ fun SettingsScreen(dataStore: DataStore<Preferences>) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 16.dp)
             ) {
-                var speakerIndex  by remember { mutableStateOf(0) }
+                var speakerIndex  by remember { mutableIntStateOf(0) }
                 var selectedSpeaker = openaiVoiceSpeakers[speakerIndex]
                 var modelExpanded by remember { mutableStateOf(false) }
 
@@ -304,12 +306,12 @@ fun SettingsScreen(dataStore: DataStore<Preferences>) {
 
                 LaunchedEffect(speaker) {
                     if (speaker != null) {
-                        selectedSpeaker = speaker as String
+                        speakerIndex = openaiVoiceSpeakers.indexOf(speaker as String)
                     }
                 }
 
                 LaunchedEffect(speakerIndex) {
-                    APIDataStore(dataStore).saveStringPreference(APIDataStoreKeys.OpenAIChatModel, openaiVoiceSpeakers[speakerIndex])
+                    APIDataStore(dataStore).saveStringPreference(APIDataStoreKeys.OpenAIVoiceSpeaker, openaiVoiceSpeakers[speakerIndex])
                 }
 
                 Box(Modifier.weight(1f)) {
