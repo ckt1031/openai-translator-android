@@ -13,6 +13,7 @@ enum class APIDataStoreKeys(val value: String) {
     OpenAIHost(("openai_host")),
     OpenAIChatModel(("openai_chat_model")),
     OpenAIEnableStream(("openai_enable_stream")),
+    OpenAIVoiceSpeaker(("openai_voice_speaker")),
     OpenAICustomChatModel(("openai_custom_chat_model"))
 }
 

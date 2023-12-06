@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -34,6 +35,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.ckt1031.openai.translator.items.openaiChatModels
+import com.ckt1031.openai.translator.items.openaiVoiceSpeakers
 import com.ckt1031.openai.translator.store.APIDataStore
 import com.ckt1031.openai.translator.store.APIDataStoreKeys
 
@@ -249,6 +251,95 @@ fun SettingsScreen(dataStore: DataStore<Preferences>) {
                             text = newText
                         },
                     )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp, top = 16.dp)
+            ) {
+                var status by remember { mutableStateOf(false) }
+
+                // Use align(Alignment.CenterVertically) to center the Column content vertically
+                Box(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                    Column(verticalArrangement = Arrangement.Center) {
+                        Text("Response in Stream Mode", style = androidx.compose.ui.text.TextStyle(fontSize = 17.sp))
+                    }
+                }
+
+                // Read the API key from DataStore
+                val stream: Boolean? by APIDataStore(dataStore).readBoolPreference(APIDataStoreKeys.OpenAIEnableStream).collectAsState(initial = null)
+
+                // Initialize the text field with the API key from DataStore
+                LaunchedEffect(stream) {
+                    if (stream != null) {
+                        status = stream as Boolean
+                    }
+                }
+
+                // Save the API key to DataStore when it changes
+                LaunchedEffect(status) {
+                    APIDataStore(dataStore).saveBoolPreference(APIDataStoreKeys.OpenAIEnableStream, status)
+                }
+
+                Switch(
+                    checked = status,
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically),
+                    onCheckedChange = {
+                        status = it
+                    }
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 16.dp)
+            ) {
+                var speakerIndex  by remember { mutableStateOf(0) }
+                var selectedSpeaker = openaiVoiceSpeakers[speakerIndex]
+                var modelExpanded by remember { mutableStateOf(false) }
+
+                val speaker: String? by APIDataStore(dataStore).readStringPreference(APIDataStoreKeys.OpenAIVoiceSpeaker).collectAsState(initial = null)
+
+                LaunchedEffect(speaker) {
+                    if (speaker != null) {
+                        selectedSpeaker = speaker as String
+                    }
+                }
+
+                LaunchedEffect(speakerIndex) {
+                    APIDataStore(dataStore).saveStringPreference(APIDataStoreKeys.OpenAIChatModel, openaiVoiceSpeakers[speakerIndex])
+                }
+
+                Box(Modifier.weight(1f)) {
+                    Column {
+                        Text("TTS Speaker", style = androidx.compose.ui.text.TextStyle(fontSize = 17.sp))
+                    }
+                }
+
+                Text(
+                    text = selectedSpeaker,
+                    modifier = Modifier
+                        .clickable(onClick = { modelExpanded = true })
+                )
+
+                DropdownMenu(
+                    expanded = modelExpanded,
+                    onDismissRequest = { modelExpanded = false },
+                    properties = PopupProperties(focusable = true)
+                ) {
+                    openaiVoiceSpeakers.forEachIndexed { index, item ->
+                        DropdownMenuItem(
+                            onClick = {
+                                speakerIndex = index
+                                modelExpanded = false
+                            },
+                            text = {
+                                Text(text = item)
+                            }
+                        )
+                    }
                 }
             }
         }

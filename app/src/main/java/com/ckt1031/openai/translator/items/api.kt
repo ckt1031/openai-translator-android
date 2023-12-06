@@ -15,3 +15,12 @@ public val openaiChatModels = listOf(
     "custom"
 )
 
+public val openaiVoiceSpeakers = listOf(
+    "alloy",
+    "echo",
+    "fable",
+    "onyx",
+    "nova",
+    "shimmer",
+)
+
