@@ -16,24 +16,6 @@ fun BottomNavigationBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-//    BottomNavigation {
-//        val currentDestination = navController.currentBackStackEntryAsState().value?.destination
-//        navigationItems.forEach { screen ->
-//            BottomNavigationItem(
-//                icon = { Icon(painterResource(id = screen.resourceId), contentDescription = null) },
-//                label = { Text(screen.title) },
-//                selected = currentDestination?.route == screen.route,
-//                onClick = {
-//                    navController.navigate(screen.route) {
-//                        // Avoid multiple copies of the same destination when reselecting the same item
-//                        popUpTo(navController.graph.startDestinationId)
-//                        launchSingleTop = true
-//                    }
-//                }
-//            )
-//        }
-//    }
-
     NavigationBar {
         navigationItems.forEachIndexed { _, item ->
             NavigationBarItem(

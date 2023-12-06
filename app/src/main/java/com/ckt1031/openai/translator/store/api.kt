@@ -14,7 +14,8 @@ enum class APIDataStoreKeys(val value: String) {
     OpenAIChatModel(("openai_chat_model")),
     OpenAIEnableStream(("openai_enable_stream")),
     OpenAIVoiceSpeaker(("openai_voice_speaker")),
-    OpenAICustomChatModel(("openai_custom_chat_model"))
+    OpenAICustomChatModel(("openai_custom_chat_model")),
+    SpeechToTextEngine(("stt_engine")),
 }
 
 class APIDataStore(private val dataStore: DataStore<Preferences>) {

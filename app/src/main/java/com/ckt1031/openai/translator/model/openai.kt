@@ -59,3 +59,9 @@ data class StreamDelta(
     val role: String?,
     val content: String?
 )
+
+data class TextToSpeechRequest(
+    val model: String,
+    val input: String,
+    val voice: String
+)

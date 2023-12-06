@@ -1,5 +1,14 @@
 package com.ckt1031.openai.translator.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,17 +18,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -31,25 +39,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
+import com.ckt1031.openai.translator.R
 import com.ckt1031.openai.translator.client.APIService
+import com.ckt1031.openai.translator.items.languages
 import com.ckt1031.openai.translator.model.ChatCompletionResponse
 import com.ckt1031.openai.translator.model.ChatRequestBody
 import com.ckt1031.openai.translator.model.Message
 import com.ckt1031.openai.translator.store.APIDataStore
 import com.ckt1031.openai.translator.store.APIDataStoreKeys
-import com.ckt1031.openai.translator.ui.components.BottomNavigationBar
-import okhttp3.Interceptor
-import okhttp3.OkHttpClient
 import retrofit2.Call
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import java.util.Locale
+
 
 fun generatePrompt(
    targetLangName: String,
@@ -62,12 +75,71 @@ fun generatePrompt(
         """.trimIndent()
 }
 
+// Function to copy text to clipboard
+fun copyToClipboard(context: Context, text: String) {
+   val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+   val clip = ClipData.newPlainText("translated text", text)
+   clipboard.setPrimaryClip(clip)
+}
+
+fun speechToText(context: Context, response: (text: String)-> Unit) {
+   if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+      Toast.makeText(context, "Speech not Available", Toast.LENGTH_SHORT).show()
+      return
+   }
+
+   val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+   val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+
+   intent.putExtra(
+      RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+      RecognizerIntent.ACTION_WEB_SEARCH,
+   )
+
+   intent.putExtra(
+      RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+      RecognizerIntent.EXTRA_SUPPORTED_LANGUAGES
+   )
+
+   // on below line we are specifying extra language as default english language
+   // intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+
+   // on below line we are specifying prompt as Speak something
+   intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak Something")
+
+   speechRecognizer.setRecognitionListener(object : RecognitionListener {
+      override fun onReadyForSpeech(bundle: Bundle?) {}
+      override fun onBeginningOfSpeech() {}
+      override fun onRmsChanged(v: Float) {}
+      override fun onBufferReceived(bytes: ByteArray?) {}
+      override fun onEndOfSpeech() {}
+      override fun onPartialResults(bundle: Bundle) {}
+      override fun onEvent(i: Int, bundle: Bundle?) {}
+      override fun onError(i: Int) {}
+
+      override fun onResults(bundle: Bundle) {
+         val result = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+         if (result != null) {
+            response(result[0])
+         }
+      }
+
+   })
+
+   speechRecognizer.startListening(intent)
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun TranslateScreen(dataStore: DataStore<Preferences>) {
+   val context = LocalContext.current
+
+   val voicePermissionState = rememberPermissionState(android.Manifest.permission.RECORD_AUDIO)
+
    var inputText by rememberSaveable { mutableStateOf("") }
    var translatedText by rememberSaveable { mutableStateOf("") }
    var selectedLanguage by rememberSaveable { mutableStateOf("Spanish") } // Default language
-   val languages = listOf("Spanish", "French", "German", "Chinese") // Example languages
 
    // Read the Host from DataStore
    val host: String? by APIDataStore(dataStore).readStringPreference(APIDataStoreKeys.OpenAIHost).collectAsState(initial = null)
@@ -78,19 +150,52 @@ fun TranslateScreen(dataStore: DataStore<Preferences>) {
    var isLoading by remember { mutableStateOf(false) }
 
    Column(modifier = Modifier.padding(16.dp)) {
-      // Input text area
-      OutlinedTextField(
-         value = inputText,
-         onValueChange = { inputText = it },
-         label = { Text("Enter text to translate") },
-         modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp),
-         maxLines = 10,
-         keyboardActions = KeyboardActions(onDone = {
-            // Trigger translation on done (optional)
-         })
-      )
+      Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+         // Input text area
+         OutlinedTextField(
+            value = inputText,
+            onValueChange = { inputText = it },
+            label = { Text("Enter text to translate") },
+            modifier = Modifier
+               .weight(1f)
+               .height(200.dp),
+            maxLines = 10,
+            keyboardActions = KeyboardActions(onDone = {
+               // Trigger translation on done (optional)
+            })
+         )
+         Column(
+            modifier = Modifier
+               .padding(start = 8.dp) // Add some padding between the text field and the button
+               .wrapContentWidth(Alignment.End) // Align the column to the end of the row
+         ) {
+            IconButton(
+               onClick = {
+                  if (!voicePermissionState.status.isGranted) {
+                     voicePermissionState.launchPermissionRequest()
+                  }
+
+                  speechToText(context) { result ->
+                     inputText += result
+                  }
+               }) {
+               Icon(painterResource(R.drawable.baseline_record_voice_over_24), contentDescription = "Record your voice")
+            }
+            IconButton(
+               onClick = {
+                  copyToClipboard(context, inputText)
+               }) {
+               Icon(painterResource(R.drawable.baseline_content_copy_24), contentDescription = "Copy to Clipboard")
+               Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+            }
+            IconButton(
+                    onClick = {
+                       inputText = ""
+                    }) {
+               Icon(painterResource(R.drawable.baseline_clear_all_24), contentDescription = "Copy to Clipboard")
+            }
+         }
+      }
 
       Spacer(modifier = Modifier.height(16.dp))
 
@@ -101,7 +206,10 @@ fun TranslateScreen(dataStore: DataStore<Preferences>) {
       ) {
          // Dropdown for selecting language
          var expanded by remember { mutableStateOf(false) }
-         Box(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+         Box(
+            Modifier
+               .weight(1f)
+               .align(Alignment.CenterVertically)) {
             Text(selectedLanguage, modifier = Modifier.clickable { expanded = true }, style = androidx.compose.ui.text.TextStyle(fontSize = 17.sp))
             DropdownMenu(
                expanded = expanded,
@@ -128,20 +236,8 @@ fun TranslateScreen(dataStore: DataStore<Preferences>) {
 
             val prompt = generatePrompt(selectedLanguage, inputText)
 
-            val authInterceptor = Interceptor { chain ->
-               val newRequest = chain.request().newBuilder()
-                  .addHeader("Authorization", "Bearer $key")
-                  .build()
-               chain.proceed(newRequest)
-            }
-
-            val client = OkHttpClient.Builder()
-               .addInterceptor(authInterceptor)
-               .build()
-
             val retrofit = Retrofit.Builder()
                .baseUrl("$host/")
-               .client(client)
                .addConverterFactory(GsonConverterFactory.create())
                .build()
 
@@ -167,7 +263,9 @@ fun TranslateScreen(dataStore: DataStore<Preferences>) {
             )
 
             // Make the API call
-            val call = service.postChatCompletions(requestBody)
+            val call = service.postChatCompletions(
+               authorization = "Bearer $key",
+               requestBody)
 
             call.enqueue(object : retrofit2.Callback<ChatCompletionResponse> {
                override fun onResponse(
@@ -215,5 +313,6 @@ fun TranslateScreen(dataStore: DataStore<Preferences>) {
                .padding(8.dp)
          )
       }
+
    }
 }

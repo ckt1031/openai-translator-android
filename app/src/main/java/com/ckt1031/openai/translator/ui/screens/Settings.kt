@@ -37,6 +37,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.ckt1031.openai.translator.items.openaiChatModels
 import com.ckt1031.openai.translator.items.openaiVoiceSpeakers
+import com.ckt1031.openai.translator.items.speechToTextEngines
 import com.ckt1031.openai.translator.store.APIDataStore
 import com.ckt1031.openai.translator.store.APIDataStoreKeys
 
@@ -177,7 +178,6 @@ fun SettingsScreen(dataStore: DataStore<Preferences>) {
 
                 LaunchedEffect(model) {
                     if (model != null) {
-                        println(model)
                         selectedModelIndex = openaiChatModels.indexOf(model as String)
                     }
                 }
@@ -198,21 +198,23 @@ fun SettingsScreen(dataStore: DataStore<Preferences>) {
                         .clickable(onClick = { modelExpanded = true })
                 )
 
-                DropdownMenu(
-                    expanded = modelExpanded,
-                    onDismissRequest = { modelExpanded = false },
-                    properties = PopupProperties(focusable = true)
-                ) {
-                    openaiChatModels.forEachIndexed { index, item ->
-                        DropdownMenuItem(
-                            onClick = {
-                                selectedModelIndex = index
-                                modelExpanded = false
-                            },
-                            text = {
-                                Text(text = item)
-                            }
-                        )
+                Box {
+                    DropdownMenu(
+                        expanded = modelExpanded,
+                        onDismissRequest = { modelExpanded = false },
+                        properties = PopupProperties(focusable = true)
+                    ) {
+                        openaiChatModels.forEachIndexed { index, item ->
+                            DropdownMenuItem(
+                                onClick = {
+                                    selectedModelIndex = index
+                                    modelExpanded = false
+                                },
+                                text = {
+                                    Text(text = item)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -298,8 +300,60 @@ fun SettingsScreen(dataStore: DataStore<Preferences>) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 16.dp)
             ) {
+                var sttIndex  by remember { mutableIntStateOf(0) }
+                val selectedSTTEngine = speechToTextEngines[sttIndex]
+                var modelExpanded by remember { mutableStateOf(false) }
+
+                val engine: String? by APIDataStore(dataStore).readStringPreference(APIDataStoreKeys.SpeechToTextEngine).collectAsState(initial = null)
+
+                LaunchedEffect(engine) {
+                    if (engine != null) {
+                        sttIndex = speechToTextEngines.indexOf(engine as String)
+                    }
+                }
+
+                LaunchedEffect(sttIndex) {
+                    APIDataStore(dataStore).saveStringPreference(APIDataStoreKeys.SpeechToTextEngine, speechToTextEngines[sttIndex])
+                }
+
+                Box(Modifier.weight(1f)) {
+                    Column {
+                        Text("Speech To Text Engine", style = androidx.compose.ui.text.TextStyle(fontSize = 17.sp))
+                    }
+                }
+
+                Text(
+                    text = selectedSTTEngine,
+                    modifier = Modifier
+                        .clickable(onClick = { modelExpanded = true })
+                )
+
+                Box {
+                    DropdownMenu(
+                        expanded = modelExpanded,
+                        onDismissRequest = { modelExpanded = false },
+                        properties = PopupProperties(focusable = true)
+                    ) {
+                        speechToTextEngines.forEachIndexed { index, item ->
+                            DropdownMenuItem(
+                                onClick = {
+                                    sttIndex = index
+                                    modelExpanded = false
+                                },
+                                text = {
+                                    Text(text = item)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 16.dp)
+            ) {
                 var speakerIndex  by remember { mutableIntStateOf(0) }
-                var selectedSpeaker = openaiVoiceSpeakers[speakerIndex]
+                val selectedSpeaker = openaiVoiceSpeakers[speakerIndex]
                 var modelExpanded by remember { mutableStateOf(false) }
 
                 val speaker: String? by APIDataStore(dataStore).readStringPreference(APIDataStoreKeys.OpenAIVoiceSpeaker).collectAsState(initial = null)
@@ -326,21 +380,23 @@ fun SettingsScreen(dataStore: DataStore<Preferences>) {
                         .clickable(onClick = { modelExpanded = true })
                 )
 
-                DropdownMenu(
-                    expanded = modelExpanded,
-                    onDismissRequest = { modelExpanded = false },
-                    properties = PopupProperties(focusable = true)
-                ) {
-                    openaiVoiceSpeakers.forEachIndexed { index, item ->
-                        DropdownMenuItem(
-                            onClick = {
-                                speakerIndex = index
-                                modelExpanded = false
-                            },
-                            text = {
-                                Text(text = item)
-                            }
-                        )
+                Box {
+                    DropdownMenu(
+                        expanded = modelExpanded,
+                        onDismissRequest = { modelExpanded = false },
+                        properties = PopupProperties(focusable = true)
+                    ) {
+                        openaiVoiceSpeakers.forEachIndexed { index, item ->
+                            DropdownMenuItem(
+                                onClick = {
+                                    speakerIndex = index
+                                    modelExpanded = false
+                                },
+                                text = {
+                                    Text(text = item)
+                                }
+                            )
+                        }
                     }
                 }
             }

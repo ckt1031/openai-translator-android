@@ -1,11 +1,11 @@
 package com.ckt1031.openai.translator.items
 
-public val apiType = listOf(
+val apiType = listOf(
     "OpenAI",
     "Azure"
 )
 
-public val openaiChatModels = listOf(
+val openaiChatModels = listOf(
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-16k",
     "gpt-3.5-turbo-1106",
@@ -15,7 +15,7 @@ public val openaiChatModels = listOf(
     "custom"
 )
 
-public val openaiVoiceSpeakers = listOf(
+val openaiVoiceSpeakers = listOf(
     "alloy",
     "echo",
     "fable",
@@ -24,3 +24,16 @@ public val openaiVoiceSpeakers = listOf(
     "shimmer",
 )
 
+val speechToTextEngines = listOf(
+    "Native",
+    "Whisper",
+)
+
+val languages = listOf(
+    "Traditional Chinese",
+    "Simplified Chinese",
+    "English",
+    "Spanish",
+    "French",
+    "German",
+)
